@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Exam Builder</title>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,Helvetica,sans-serif}
+  body{margin:0;background:#0f172a;color:#e2e8f0;padding:16px;min-height:100vh}
+  .wrap{max-width:600px;margin:0 auto}
+  h1{color:#06b6d4;font-size:24px;margin:0 0 6px}
+  .sub{color:#94a3b8;font-size:14px;margin:0 0 24px;line-height:1.5}
+  .card{background:#1e293b;border-radius:12px;padding:20px;margin-bottom:16px}
+  label{display:block;font-size:14px;color:#cbd5e1;margin:14px 0 6px;font-weight:600}
+  input[type=text],input[type=number],input[type=file],select{
+    width:100%;padding:12px;border:1px solid #334155;border-radius:8px;
+    background:#0f172a;color:#e2e8f0;font-size:15px;font-family:inherit
+  }
+  input[type=file]{padding:10px;font-size:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  button{cursor:pointer;font-family:inherit;font-size:15px;border:0;border-radius:8px;padding:13px 18px;font-weight:700;transition:background .15s}
+  .btn{background:#06b6d4;color:#00222a;width:100%;margin-top:18px}
+  .btn:hover{background:#0891b2}
+  .btn:disabled{background:#475569;color:#94a3b8;cursor:not-allowed}
+  .btn-sec{background:transparent;border:1px solid #334155;color:#94a3b8;width:100%;margin-top:8px;font-size:13px;padding:10px}
+  .btn-sec:hover{background:#0f172a;color:#e2e8f0}
+  .info{margin-top:12px;padding:12px;background:#0f172a;border-radius:8px;font-size:13px;color:#94a3b8;text-align:center;line-height:1.5}
+  .info.ok{color:#10b981}
+  .info.err{color:#ef4444}
+  .info.warn{color:#f59e0b}
+  .hint{font-size:13px;color:#94a3b8;line-height:1.7}
+  code{background:#0f172a;color:#fbbf24;padding:2px 6px;border-radius:4px;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px}
+  .hide{display:none!important}
+  .chk{display:flex;align-items:center;gap:10px;font-weight:500;margin:12px 0 0;cursor:pointer}
+  .chk input{width:20px;height:20px;flex:0 0 20px;margin:0}
+  html{-webkit-text-size-adjust:100%}
+  button,select,input{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button:active{transform:scale(.98)}
+  @media(min-width:900px){.wrap{max-width:680px}}
+  @media(max-width:520px){.row{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Exam Builder</h1>
+  <p class="sub">Create a self-contained exam file. Works fully offline. No internet required.</p>
+
+  <div class="card">
+    <label for="fileInput">1. Question bank file (CSV)</label>
+    <input type="file" id="fileInput" accept=".csv,text/csv,text/comma-separated-values,application/vnd.ms-excel">
+    <button class="btn-sec" id="dlSample" type="button">Download sample CSV</button>
+    <div class="info" id="fileInfo" role="status" aria-live="polite">No file loaded.</div>
+
+    <label for="examTitle">2. Exam title</label>
+    <input type="text" id="examTitle" value="Practice Exam" placeholder="e.g. WordPress Fundamentals">
+
+    <label for="langSelect">3. Output language (UI &amp; text direction)</label>
+    <select id="langSelect">
+      <option value="en">English (LTR)</option>
+      <option value="fa">فارسی — Persian (RTL)</option>
+      <option value="ar">العربية — Arabic (RTL)</option>
+    </select>
+    <p class="hint" style="margin-top:8px">The CSV content should already be in the selected language. This setting controls the exam interface, buttons, and text direction.</p>
+
+    <div class="row">
+      <div>
+        <label for="qCount">Number of questions</label>
+        <input type="number" id="qCount" value="20" min="1" max="1000">
+      </div>
+      <div>
+        <label for="duration">Duration (minutes)</label>
+        <input type="number" id="duration" value="30" min="1" max="600">
+      </div>
+    </div>
+
+    <label for="passMark">Pass mark (%) — 0 to 100, default 50</label>
+    <input type="number" id="passMark" value="50" min="0" max="100">
+
+    <label for="netSel">4. Share network (for sending the files)</label>
+    <select id="netSel">
+      <option value="system">System share sheet (any app)</option>
+      <option value="telegram">Telegram</option>
+      <option value="whatsapp">WhatsApp</option>
+      <option value="bale">Bale (بله)</option>
+      <option value="rubika">Rubika (روبیکا)</option>
+      <option value="eitaa">Eitaa (ایتا)</option>
+    </select>
+    <label for="groupLink">Class channel / group link (optional)</label>
+    <input type="text" id="groupLink" dir="ltr" placeholder="https://t.me/your_class" autocomplete="off">
+    <p class="hint" style="margin-top:8px">Students get a button that sends their result through the system share sheet when the browser allows it (needs HTTPS, e.g. GitHub Pages). Otherwise the result is downloaded, a summary is copied, and this link (or the selected app) is opened. Messenger apps cannot be given a file by a link, so the file is attached manually in that case.</p>
+    <label class="chk"><input type="checkbox" id="saveExamCopy" checked> Save a copy of the exam file to Downloads</label>
+    <label class="chk"><input type="checkbox" id="saveResultCopy" checked> Students: also save a copy of the result file to Downloads</label>
+    <label class="chk"><input type="checkbox" id="shuffleOpts"> Shuffle answer options for each student</label>
+    <label class="chk"><input type="checkbox" id="showReview"> Show correct answers to students after finishing</label>
+    <button class="btn" id="genBtn" type="button" disabled>Generate exam file</button>
+  </div>
+
+  <div class="card hide" id="outCard">
+    <div class="info ok" id="outInfo" role="status" aria-live="polite"></div>
+    <button class="btn" id="shareExam" type="button">Send exam file</button>
+    <button class="btn-sec" id="redl" type="button">Download again</button>
+  </div>
+
+  <div class="card">
+    <div class="hint">
+      <strong>CSV format (first row is header):</strong><br>
+      <code>text, optionA, optionB, optionC, optionD, correct, explanation</code><br><br>
+      <strong>Column <code>correct</code>:</strong> 0 = A, 1 = B, 2 = C, 3 = D. Also accepts A–D letters and Persian/Arabic digits.<br>
+      <strong>Column <code>explanation</code>:</strong> optional.<br>
+      <strong>Delimiter:</strong> comma or semicolon (auto-detected).<br>
+      <strong>Encoding:</strong> save as <code>CSV UTF-8</code>.
+    </div>
+  </div>
+</div>
+
+<!-- ===== Exam CSS (embedded template) ===== -->
+<script type="text/template" id="examCss">
+*{box-sizing:border-box;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,Helvetica,sans-serif}
+html,body{margin:0}
+body{background:#0f172a;color:#e2e8f0;min-height:100vh;padding:16px}
+.wrap{max-width:820px;margin:0 auto}
+.card{background:#1e293b;border-radius:12px;padding:20px;margin-bottom:16px}
+h2{margin:0 0 8px;color:#06b6d4;font-size:22px}
+input{width:100%;padding:14px;margin:8px 0;border:1px solid #334155;border-radius:8px;background:#0f172a;color:#e2e8f0;font-size:16px;font-family:inherit;text-align:start}
+button{cursor:pointer;font-size:15px;border:0;border-radius:8px;padding:14px 18px;font-weight:700;font-family:inherit;transition:background .15s}
+.btn{background:#06b6d4;color:#00222a;width:100%}
+.btn:hover{background:#0891b2}
+.btn.sec{background:#334155;color:#e2e8f0}
+.btn.sec:hover{background:#475569}
+.btn:disabled{background:#475569;color:#94a3b8;cursor:not-allowed}
+.timer{text-align:center;padding:14px;background:#1e293b;border-radius:10px;margin-bottom:16px;font-weight:700;font-size:18px;letter-spacing:.5px}
+.timer.warn{color:#f59e0b}
+.timer.danger{color:#ef4444;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@media (prefers-reduced-motion: reduce){.timer.danger{animation:none}}
+.qn{color:#06b6d4;font-weight:700;margin-bottom:10px;font-size:15px;letter-spacing:.3px}
+.qt{font-size:17px;line-height:1.55;margin-bottom:16px;white-space:pre-line;text-align:start}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;padding:14px;border-radius:10px;background:#0f172a;border:2px solid #334155;cursor:pointer;transition:border-color .15s,background .15s}
+.opt:hover{border-color:#475569}
+.opt:focus{outline:2px solid #06b6d4;outline-offset:2px}
+.opt.sel{border-color:#06b6d4;background:rgba(6,182,212,.08)}
+.opt .l{width:32px;height:32px;flex:0 0 32px;display:flex;align-items:center;justify-content:center;background:#334155;border-radius:8px;font-weight:800;font-size:14px;color:#cbd5e1}
+.opt.sel .l{background:#06b6d4;color:#00222a}
+.opt .t{flex:1;font-size:15px;line-height:1.4;text-align:start}
+.nav{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.nav button{flex:1;min-width:110px}
+.grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:12px}
+.grid div{padding:10px 0;text-align:center;background:#0f172a;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;color:#cbd5e1;transition:all .15s}
+.grid div:hover{background:#1e293b}
+.grid div:focus{outline:2px solid #06b6d4;outline-offset:2px}
+.grid div.a{background:#06b6d4;color:#00222a;border-color:#06b6d4}
+.grid div.f{border-color:#f59e0b;border-width:2px;color:#f59e0b}
+.grid div.a.f{color:#00222a}
+.stat{font-size:13px;color:#94a3b8;margin-bottom:10px;letter-spacing:.3px}
+.score{text-align:center;padding:28px 20px;background:#0f172a;border-radius:12px;margin:8px 0}
+.score .n{font-size:56px;font-weight:800;color:#06b6d4;line-height:1;letter-spacing:-1px}
+.score .from{color:#94a3b8;font-size:14px;margin-top:6px}
+.score .p{color:#10b981;font-weight:800;font-size:22px;margin-top:14px;letter-spacing:1px}
+.score .f{color:#ef4444;font-weight:800;font-size:22px;margin-top:14px;letter-spacing:1px}
+.score .meta{margin-top:16px;color:#94a3b8;font-size:14px;line-height:1.7}
+.hide{display:none!important}
+textarea.copy{width:100%;min-height:120px;margin-top:10px;padding:10px;border-radius:8px;background:#0f172a;color:#cbd5e1;border:1px solid #334155;font-family:"SFMono-Regular",Consolas,monospace;font-size:12px;direction:ltr;text-align:left;resize:vertical}
+html{-webkit-text-size-adjust:100%}
+button,input,.opt,.grid div{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.98)}
+.opt{min-height:52px}
+.note{margin-top:12px;color:#10b981;line-height:1.6}
+.rv{border-top:1px solid #334155;padding:12px 0}
+.rvl{font-size:14px;margin-top:6px;line-height:1.5}
+.rvl.ok{color:#10b981}.rvl.bad{color:#ef4444}
+bdi{unicode-bidi:isolate}
+@media(min-width:768px){.grid{grid-template-columns:repeat(10,1fr)}.qt{font-size:19px}.opt .t{font-size:16px}}
+@media(max-width:600px){body{padding:10px}.card{padding:16px}.grid{grid-template-columns:repeat(5,1fr)}.score .n{font-size:48px}}
+</script>
+
+<!-- ===== Exam JS (embedded template) ===== -->
+<script type="text/template" id="examJs">
+(function(){
+  'use strict';
+  var cfgEl = document.getElementById('cfg');
+  var cfg = JSON.parse(fromB64(cfgEl.textContent.trim()));
+  var app = document.getElementById('app');
+  var Q = [], A = [], F = [], cur = 0, T = null, TL = cfg.duration * 60, done = false;
+  var startedAt = null;
+  var resultSaved = false;
+  var isRTL = (cfg.lang === 'fa' || cfg.lang === 'ar');
+
+  document.documentElement.lang = cfg.lang || 'en';
+  document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+
+  var L = {
+    en: {
+      start:'Start Exam', name:'Full Name', sid:'Student ID', questions:'questions', minutes:'minutes',
+      timeLeft:'Time left', question:'Question', of:'of', prev:'Previous', next:'Next', finish:'Finish',
+      flag:'Flag', unflag:'Unflag', endExam:'End Exam', answered:'Answered', flagged:'Flagged',
+      result:'Exam Result', outOf:'out of 100', passed:'PASSED', failed:'FAILED', correct:'Correct',
+      download:'Download Result (JSON)', copy:'Copy Result', share:'Share Result',
+      confirmFinish:'Finish the exam now?',
+      confirmUnanswered:'You have {n} unanswered question(s). Finish anyway?',
+      needInfo:'Please enter your name and student ID.',
+      copied:'Result copied to clipboard.', copyFailed:'Copy failed. Please select and copy manually.',
+      shareFailed:'Share not available. Result file downloaded instead.'
+    },
+    fa: {
+      start:'شروع آزمون', name:'نام و نام خانوادگی', sid:'شماره دانشجویی', questions:'سوال', minutes:'دقیقه',
+      timeLeft:'زمان باقی‌مانده', question:'سوال', of:'از', prev:'قبلی', next:'بعدی', finish:'پایان',
+      flag:'نشان‌گذاری', unflag:'حذف نشان', endExam:'پایان آزمون', answered:'پاسخ داده', flagged:'نشان‌گذاری‌شده',
+      result:'نتیجه آزمون', outOf:'از ۱۰۰', passed:'قبول', failed:'مردود', correct:'پاسخ صحیح',
+      download:'دانلود نتیجه (JSON)', copy:'کپی نتیجه', share:'اشتراک‌گذاری نتیجه',
+      confirmFinish:'آیا آزمون را تمام می‌کنید؟',
+      confirmUnanswered:'شما {n} سوال بی‌پاسخ دارید. باز هم تمام می‌کنید؟',
+      needInfo:'لطفاً نام و شماره دانشجویی خود را وارد کنید.',
+      copied:'نتیجه در حافظه کپی شد.', copyFailed:'کپی نشد. لطفاً به‌صورت دستی انتخاب و کپی کنید.',
+      shareFailed:'اشتراک‌گذاری در دسترس نیست. فایل نتیجه دانلود شد.'
+    },
+    ar: {
+      start:'ابدأ الاختبار', name:'الاسم الكامل', sid:'الرقم الجامعي', questions:'سؤال', minutes:'دقيقة',
+      timeLeft:'الوقت المتبقي', question:'السؤال', of:'من', prev:'السابق', next:'التالي', finish:'إنهاء',
+      flag:'تعليم', unflag:'إلغاء التعليم', endExam:'إنهاء الاختبار', answered:'تمت الإجابة', flagged:'مُعلَّم',
+      result:'نتيجة الاختبار', outOf:'من 100', passed:'ناجح', failed:'راسب', correct:'الإجابة الصحيحة',
+      download:'تنزيل النتيجة (JSON)', copy:'نسخ النتيجة', share:'مشاركة النتيجة',
+      confirmFinish:'هل تريد إنهاء الاختبار الآن؟',
+      confirmUnanswered:'لديك {n} سؤال بدون إجابة. هل تريد الإنهاء على أي حال؟',
+      needInfo:'الرجاء إدخال الاسم والرقم الجامعي.',
+      copied:'تم نسخ النتيجة إلى الحافظة.', copyFailed:'فشل النسخ. الرجاء التحديد والنسخ يدوياً.',
+      shareFailed:'المشاركة غير متاحة. تم تنزيل ملف النتيجة.'
+    }
+  };
+  var t = L[cfg.lang] || L.en;
+  var X = {
+    en:{review:'Review answers', you:'Your answer', right:'Correct answer', none:'(no answer)', sumPass:'PASSED', sumFail:'FAILED', note:'Result file saved and summary copied. Attach the file in the chat that opened.', sent:'Share sheet opened.'},
+    fa:{review:'مرور پاسخ‌ها', you:'پاسخ شما', right:'پاسخ صحیح', none:'(بدون پاسخ)', sumPass:'قبول', sumFail:'مردود', note:'فایل نتیجه ذخیره و خلاصه کپی شد. فایل را در گفتگوی بازشده پیوست کنید.', sent:'پنجره اشتراک‌گذاری باز شد.'},
+    ar:{review:'مراجعة الإجابات', you:'إجابتك', right:'الإجابة الصحيحة', none:'(بدون إجابة)', sumPass:'ناجح', sumFail:'راسب', note:'تم حفظ ملف النتيجة ونسخ الملخص. أرفق الملف في المحادثة التي فُتحت.', sent:'تم فتح نافذة المشاركة.'}
+  };
+  var x = X[cfg.lang] || X.en;
+  var NETS = {
+    telegram:function(m){ return 'https://t.me/share/url?url=%20&text=' + encodeURIComponent(m); },
+    whatsapp:function(m){ return 'https://wa.me/?text=' + encodeURIComponent(m); },
+    bale:function(){ return 'https://ble.ir/'; },
+    rubika:function(){ return 'https://rubika.ir/'; },
+    eitaa:function(){ return 'https://eitaa.com/'; }
+  };
+  function fmt(s, vars){ return s.replace(/\{(\w+)\}/g, function(_, k){ return vars[k] != null ? vars[k] : ''; }); }
+
+  function esc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  var D = isRTL ? 'rtl' : 'auto';
+  var LATIN = /(<\/?[A-Za-z][^<>\s]*>|[A-Za-z0-9][A-Za-z0-9\u00C0-\u024F._+#\/:@%-]*(?: +[A-Za-z0-9][A-Za-z0-9\u00C0-\u024F._+#\/:@%-]*)*)/g;
+  function rich(s){
+    s = String(s == null ? '' : s);
+    if(!isRTL) return esc(s);
+    var parts = s.split(LATIN), out = '';
+    for(var i = 0; i < parts.length; i++){
+      out += (i % 2) ? '<bdi dir="ltr">' + esc(parts[i]) + '</bdi>' : esc(parts[i]);
+    }
+    return out;
+  }
+  function shuffle(a){
+    for(var i = a.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+  function fromB64(b64){
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for(var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  function hash(s){
+    var h = 5381;
+    for(var i = 0; i < s.length; i++){ h = ((h << 5) + h + s.charCodeAt(i)) | 0; }
+    return (h >>> 0).toString(36);
+  }
+
+  var STATE_BASE = 'exam_state_v1_' + hash(cfgEl.textContent.trim());
+  var STATE_KEY = STATE_BASE;
+  var deadline = 0;
+
+  function saveState(){
+    try{
+      localStorage.setItem(STATE_KEY, JSON.stringify({
+        Q:Q, A:A, F:F, cur:cur, deadline:deadline,
+        name:cfg.studentName, sid:cfg.studentId, startedAt:startedAt
+      }));
+    }catch(e){}
+  }
+  function clearState(){ try{ localStorage.removeItem(STATE_KEY); }catch(e){} }
+  function loadState(){
+    try{ var r = localStorage.getItem(STATE_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; }
+  }
+
+  function startScreen(){
+    app.innerHTML =
+      '<div class="wrap"><div class="card">' +
+        '<h2>' + esc(cfg.title) + '</h2>' +
+        '<p class="stat">' + cfg.count + ' ' + t.questions + ' &middot; ' + cfg.duration + ' ' + t.minutes + '</p>' +
+        '<label for="nm">' + t.name + '</label>' +
+        '<input id="nm" autocomplete="name" dir="auto">' +
+        '<label for="sid">' + t.sid + '</label>' +
+        '<input id="sid" autocomplete="off" dir="auto">' +
+        '<button class="btn" id="sb" type="button">' + t.start + '</button>' +
+      '</div></div>';
+    document.getElementById('sb').onclick = begin;
+    document.getElementById('sid').addEventListener('keydown', function(e){
+      if(e.key === 'Enter') begin();
+    });
+  }
+
+  function begin(){
+    var n = document.getElementById('nm').value.trim();
+    var s = document.getElementById('sid').value.trim();
+    if(!n || !s){ alert(t.needInfo); return; }
+    cfg.studentName = n;
+    cfg.studentId = s;
+    STATE_KEY = STATE_BASE + '_' + hash(n + '\u0001' + s);
+
+    var saved = loadState();
+    var useSaved = false;
+    if(saved && saved.Q && saved.Q.length && saved.name === n && saved.sid === s){
+      Q = saved.Q; A = saved.A || []; F = saved.F || [];
+      cur = saved.cur || 0; deadline = saved.deadline;
+      startedAt = saved.startedAt || Date.now();
+      useSaved = true;
+    }
+    if(!useSaved){
+      var pool = shuffle(cfg.questions.slice());
+      var c = Math.min(cfg.count, pool.length);
+      Q = pool.slice(0, c).map(function(q){
+        if(!cfg.shuffle) return q;
+        var idx = shuffle(q.choices.map(function(_, i){ return i; }));
+        return { id:q.id, text:q.text, explanation:q.explanation,
+                 choices: idx.map(function(i){ return q.choices[i]; }), correct: idx.indexOf(q.correct) };
+      });
+      A = []; F = [];
+      for(var i = 0; i < Q.length; i++){ A.push(null); F.push(false); }
+      cur = 0;
+      deadline = Date.now() + cfg.duration * 60000;
+      startedAt = Date.now();
+      saveState();
+    }
+    if(useSaved && deadline <= Date.now()){
+      renderExam();
+      finish();
+      return;
+    }
+    renderExam();
+    startTimer();
+  }
+
+  function startTimer(){
+    TL = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+    updateTimer();
+    T = setInterval(function(){
+      TL = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      updateTimer();
+      if(TL <= 0){ clearInterval(T); finish(); }
+    }, 500);
+  }
+
+  function updateTimer(){
+    var box = document.getElementById('tm');
+    if(!box) return;
+    var m = Math.floor(TL / 60), s = TL % 60;
+    box.textContent = t.timeLeft + ': ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var total = cfg.duration * 60;
+    var warn = Math.max(60, total * 0.2);
+    var danger = Math.max(30, total * 0.1);
+    box.className = 'timer' + (TL <= danger ? ' danger' : (TL <= warn ? ' warn' : ''));
+  }
+
+  function renderExam(){
+    var q = Q[cur];
+    var html = '<div class="wrap">' +
+      '<div class="timer" id="tm"></div>' +
+      '<div class="card">' +
+        '<div class="qn">' + t.question + ' ' + (cur + 1) + ' ' + t.of + ' ' + Q.length + '</div>' +
+        '<div class="qt" dir="' + D + '">' + rich(q.text) + '</div>' +
+        '<div class="opts" role="radiogroup">';
+
+    for(var i = 0; i < q.choices.length; i++){
+      html += '<div class="opt' + (A[cur] === i ? ' sel' : '') + '" data-i="' + i + '" ' +
+              'role="radio" tabindex="0" aria-checked="' + (A[cur] === i ? 'true' : 'false') + '">' +
+                '<div class="l" aria-hidden="true">' + String.fromCharCode(65 + i) + '</div>' +
+                '<div class="t" dir="' + D + '">' + rich(q.choices[i]) + '</div>' +
+              '</div>';
+    }
+
+    html += '</div></div>' +
+      '<div class="nav">' +
+        '<button class="btn sec" id="pv" type="button"' + (cur === 0 ? ' disabled' : '') + '>' + t.prev + '</button>' +
+        '<button class="btn sec" id="fl" type="button">' + (F[cur] ? t.unflag : t.flag) + '</button>' +
+        '<button class="btn" id="nx" type="button">' + (cur === Q.length - 1 ? t.finish : t.next) + '</button>' +
+      '</div>' +
+      '<div class="card" style="margin-top:12px">' +
+        '<div class="stat">' + t.answered + ': ' + A.filter(function(x){ return x !== null; }).length + ' / ' + Q.length +
+        ' &middot; ' + t.flagged + ': ' + F.filter(function(x){ return x; }).length + '</div>' +
+        '<div class="grid" role="navigation">';
+
+    for(var j = 0; j < Q.length; j++){
+      var cls = [];
+      if(A[j] !== null) cls.push('a');
+      if(F[j]) cls.push('f');
+      html += '<div data-j="' + j + '"' + (cls.length ? ' class="' + cls.join(' ') + '"' : '') +
+              ' role="button" tabindex="0" aria-label="' + t.question + ' ' + (j + 1) + '">' + (j + 1) + '</div>';
+    }
+
+    html += '</div></div>' +
+      '<button class="btn sec" id="fi" type="button" style="width:100%;margin-top:12px">' + t.endExam + '</button>' +
+      '</div>';
+
+    app.innerHTML = html;
+    updateTimer();
+
+    var opts = app.querySelectorAll('.opt');
+    for(var k = 0; k < opts.length; k++){
+      (function(el){
+        function select(){
+          var idx = parseInt(el.getAttribute('data-i'), 10);
+          A[cur] = idx;
+          saveState();
+          renderExam();
+          var again = app.querySelector('.opt[data-i="' + idx + '"]');
+          if(again) again.focus();
+        }
+        el.onclick = select;
+        el.onkeydown = function(e){
+          if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); select(); }
+        };
+      })(opts[k]);
+    }
+
+    var pv = document.getElementById('pv');
+    if(pv) pv.onclick = function(){ if(cur > 0){ cur--; saveState(); renderExam(); } };
+
+    var nx = document.getElementById('nx');
+    if(nx) nx.onclick = function(){
+      if(cur < Q.length - 1){ cur++; saveState(); renderExam(); }
+      else confirmFinish();
+    };
+
+    var fl = document.getElementById('fl');
+    if(fl) fl.onclick = function(){ F[cur] = !F[cur]; saveState(); renderExam(); };
+
+    var fi = document.getElementById('fi');
+    if(fi) fi.onclick = confirmFinish;
+
+    var cells = app.querySelectorAll('.grid div');
+    for(var m = 0; m < cells.length; m++){
+      (function(el){
+        function go(){
+          cur = parseInt(el.getAttribute('data-j'), 10);
+          saveState(); renderExam();
+        }
+        el.onclick = go;
+        el.onkeydown = function(e){
+          if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); }
+        };
+      })(cells[m]);
+    }
+  }
+
+  function confirmFinish(){
+    var unanswered = A.filter(function(x){ return x === null; }).length;
+    var msg = unanswered > 0 ? fmt(t.confirmUnanswered, { n: unanswered }) : t.confirmFinish;
+    if(confirm(msg)) finish();
+  }
+
+  function finish(){
+    if(done) return;
+    done = true;
+    if(T) clearInterval(T);
+    clearState();
+
+    var correct = 0;
+    for(var i = 0; i < Q.length; i++){
+      if(A[i] === Q[i].correct) correct++;
+    }
+    var score = Q.length > 0 ? Math.round((correct / Q.length) * 1000) / 10 : 0;
+    var passMark = typeof cfg.passMark === 'number' ? cfg.passMark : 50;
+    var passed = Q.length > 0 && (correct / Q.length * 100) >= passMark;
+    var durationSeconds = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
+
+    var res = {
+      studentName: cfg.studentName,
+      studentId: cfg.studentId,
+      examTitle: cfg.title,
+      examLanguage: cfg.lang,
+      totalQuestions: Q.length,
+      correctAnswers: correct,
+      score: score,
+      passMark: passMark,
+      passed: passed,
+      startedAt: new Date(startedAt).toISOString(),
+      finishedAt: new Date().toISOString(),
+      durationSeconds: durationSeconds,
+      details: Q.map(function(q, i){
+        return {
+          id: q.id,
+          number: i + 1,
+          text: q.text,
+          userAnswerIndex: A[i],
+          userAnswerText: A[i] !== null ? q.choices[A[i]] : null,
+          correctIndex: q.correct,
+          correctText: q.choices[q.correct],
+          isCorrect: A[i] === q.correct,
+          explanation: q.explanation || ''
+        };
+      })
+    };
+    renderResult(res);
+  }
+
+  var SAFE_RE;
+  try{ SAFE_RE = new RegExp('[^\\p{L}\\p{N}_-]+', 'gu'); }
+  catch(e){ SAFE_RE = /[^A-Za-z0-9_-]+/g; }
+  function safeName(s){
+    var out = String(s == null ? '' : s).replace(SAFE_RE, '_').replace(/^_+|_+$/g, '');
+    return out || 'student';
+  }
+
+  function reviewHtml(r){
+    if(!cfg.review) return '';
+    var h = '<h2 style="margin-top:22px;font-size:18px">' + x.review + '</h2>';
+    r.details.forEach(function(d){
+      h += '<div class="rv"><div class="qn">' + t.question + ' ' + d.number + '</div>' +
+           '<div class="qt" dir="' + D + '">' + rich(d.text) + '</div>' +
+           '<div class="rvl ' + (d.isCorrect ? 'ok' : 'bad') + '" dir="' + D + '">' + x.you + ': ' + (d.userAnswerText !== null ? rich(d.userAnswerText) : x.none) + '</div>' +
+           (d.isCorrect ? '' : '<div class="rvl ok" dir="' + D + '">' + x.right + ': ' + rich(d.correctText) + '</div>') +
+           '</div>';
+    });
+    return h;
+  }
+
+  function renderResult(r){
+    var html = '<div class="wrap"><div class="card">' +
+      '<h2>' + t.result + '</h2>' +
+      '<div class="score">' +
+        '<div class="n">' + r.score + '</div>' +
+        '<div class="from">' + t.outOf + '</div>' +
+        '<div class="' + (r.passed ? 'p' : 'f') + '">' + (r.passed ? t.passed : t.failed) + '</div>' +
+        '<div class="meta">' +
+          t.correct + ': ' + r.correctAnswers + ' / ' + r.totalQuestions + '<br>' +
+          '<bdi>' + esc(r.studentName) + '</bdi> &middot; <bdi>' + esc(r.studentId) + '</bdi>' +
+        '</div>' +
+      '</div>' +
+      '<button class="btn" id="dl" type="button" style="margin-top:16px">' + t.download + '</button>' +
+      '<button class="btn sec" id="sh" type="button">' + t.share + '</button>' +
+      '<button class="btn sec" id="cp" type="button">' + t.copy + '</button>' +
+      '<div class="stat note hide" id="note" role="status" aria-live="polite"></div>' +
+      '<textarea class="copy" id="cpt" readonly aria-label="' + t.copy + '"></textarea>' +
+      reviewHtml(r) + '</div></div>';
+
+    app.innerHTML = html;
+
+    var json = JSON.stringify(r, null, 2);
+    var cpTa = document.getElementById('cpt');
+    if(cpTa) cpTa.value = json;
+
+    var filename = 'result_' + safeName(r.studentId) + '_' + Date.now() + '.json';
+
+    function downloadResult(auto){
+      var blob = new Blob([json], {type:'application/json'});
+      var u = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = u; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(u); }, 10000);
+      if(auto !== true) resultSaved = true;
+    }
+
+    document.getElementById('dl').onclick = downloadResult;
+    if(cfg.saveResultCopy){ try{ downloadResult(true); }catch(e){} }
+
+    document.getElementById('cp').onclick = function(){
+      function doneCopy(){
+        resultSaved = true;
+        alert(t.copied);
+      }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(json).then(doneCopy).catch(function(){
+          try{ cpTa.select(); cpTa.setSelectionRange(0, cpTa.value.length); document.execCommand('copy'); doneCopy(); }
+          catch(e){ alert(t.copyFailed); }
+        });
+      } else {
+        try{ cpTa.select(); cpTa.setSelectionRange(0, cpTa.value.length); document.execCommand('copy'); doneCopy(); }
+        catch(e){ alert(t.copyFailed); }
+      }
+    };
+
+    function note(msg){ var n = document.getElementById('note'); if(n){ n.textContent = msg; n.className = 'stat note'; } }
+    document.getElementById('sh').onclick = function(){
+      var summary = r.examTitle + '\n' + r.studentName + ' (' + r.studentId + ')\n' +
+        r.score + '/100 - ' + (r.passed ? x.sumPass : x.sumFail) + ' (' + r.correctAnswers + '/' + r.totalQuestions + ')';
+      var sh = cfg.share || {};
+      try{
+        var file = new File([json], filename, {type:'application/json'});
+        if(navigator.canShare && navigator.canShare({ files:[file] })){
+          navigator.share({ files:[file], title: r.examTitle, text: summary }).then(function(){
+            resultSaved = true; note(x.sent);
+          }).catch(function(err){
+            if(err && err.name === 'AbortError') return;
+            fallback();
+          });
+          return;
+        }
+      }catch(e){}
+      fallback();
+      function fallback(){
+        downloadResult();
+        try{ navigator.clipboard.writeText(summary).catch(function(){}); }catch(e){}
+        var u = sh.link || (NETS[sh.net] ? NETS[sh.net](summary) : '');
+        if(u) window.open(u, '_blank', 'noopener');
+        note(x.note);
+      }
+    };
+  }
+
+  window.addEventListener('beforeunload', function(e){
+    if((!done && Q.length > 0) || (done && !resultSaved)){
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  startScreen();
+})();
+</script>
+
+<!-- ===== Admin logic ===== -->
+<script>
+(function(){
+  'use strict';
+  var parsedQuestions = [];
+  var skippedRows = [];
+  var fileInput = document.getElementById('fileInput');
+  var fileInfo = document.getElementById('fileInfo');
+  var genBtn = document.getElementById('genBtn');
+  var langSelect = document.getElementById('langSelect');
+
+  function setInfo(txt, kind){
+    fileInfo.textContent = txt;
+    fileInfo.className = 'info' + (kind ? ' ' + kind : '');
+  }
+  function escapeHtml(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function normalizeDigits(s){
+    return String(s || '')
+      .replace(/[\u06F0-\u06F9]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0x06F0 + 48); })
+      .replace(/[\u0660-\u0669]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0x0660 + 48); });
+  }
+
+  function parseCSV(text){
+    text = text.replace(/^\uFEFF/, '');
+    var firstLine = text.split(/\r\n|\n|\r/, 1)[0] || '';
+    var delim = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+    var rows = [], row = [], cur = '', q = false;
+    for(var i = 0; i < text.length; i++){
+      var c = text[i];
+      if(q){
+        if(c === '"'){
+          if(text[i + 1] === '"'){ cur += '"'; i++; }
+          else q = false;
+        } else cur += c;
+      } else {
+        if(c === '"' && cur === ''){ q = true; }
+        else if(c === delim){ row.push(cur); cur = ''; }
+        else if(c === '\n' || c === '\r'){
+          if(c === '\r' && text[i + 1] === '\n') i++;
+          row.push(cur); rows.push(row); row = []; cur = '';
+        }
+        else cur += c;
+      }
+    }
+    if(cur !== '' || row.length){ row.push(cur); rows.push(row); }
+    return rows;
+  }
+
+  function parseRows(rows){
+    if(!rows || rows.length < 2) throw new Error('File is empty or has no data rows.');
+    var hdr = rows[0].map(function(h){ return String(h || '').trim().toLowerCase(); });
+    function find(names){
+      for(var i = 0; i < names.length; i++){
+        var k = hdr.indexOf(names[i]);
+        if(k >= 0) return k;
+      }
+      return -1;
+    }
+    var ci = {
+      text: find(['text','question']),
+      a: find(['optiona','a','choicea']),
+      b: find(['optionb','b','choiceb']),
+      c: find(['optionc','c','choicec']),
+      d: find(['optiond','d','choiced']),
+      correct: find(['correct','answer']),
+      exp: find(['explanation','explain'])
+    };
+    if(ci.text < 0 || ci.a < 0 || ci.b < 0 || ci.c < 0 || ci.d < 0 || ci.correct < 0){
+      throw new Error('Missing required columns. Expected: text, optionA, optionB, optionC, optionD, correct.');
+    }
+    var out = [], skipped = [], nextId = 1;
+    for(var i = 1; i < rows.length; i++){
+      var r = rows[i];
+      if(!r) continue;
+      if(!r[ci.text] || !String(r[ci.text]).trim()) continue;
+
+      var ct = normalizeDigits(String(r[ci.correct] || '').trim());
+      var cIdx = -1;
+      if(/^[0-3]$/.test(ct)) cIdx = parseInt(ct, 10);
+      else if(/^[A-Da-d]$/.test(ct)) cIdx = 'ABCD'.indexOf(ct.toUpperCase());
+      if(cIdx < 0 || cIdx > 3){ skipped.push(i + 1); continue; }
+
+      var choices = [
+        String(r[ci.a] || '').trim(),
+        String(r[ci.b] || '').trim(),
+        String(r[ci.c] || '').trim(),
+        String(r[ci.d] || '').trim()
+      ];
+      var nonEmpty = [], remap = [];
+      for(var k = 0; k < choices.length; k++){
+        if(choices[k] !== ''){ remap.push(k); nonEmpty.push(choices[k]); }
+      }
+      if(nonEmpty.length < 2 || choices[cIdx] === ''){ skipped.push(i + 1); continue; }
+      var newCorrect = remap.indexOf(cIdx);
+      if(newCorrect < 0){ skipped.push(i + 1); continue; }
+
+      out.push({
+        id: nextId++,
+        text: String(r[ci.text]).trim(),
+        choices: nonEmpty,
+        correct: newCorrect,
+        explanation: ci.exp >= 0 ? String(r[ci.exp] || '').trim() : ''
+      });
+    }
+    if(!out.length) throw new Error('No valid questions found in the file.');
+    return { questions: out, skipped: skipped };
+  }
+
+  fileInput.addEventListener('click', function(){ fileInput.value = ''; });
+  fileInput.addEventListener('change', function(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    var ext = (f.name.split('.').pop() || '').toLowerCase();
+    if(ext !== 'csv'){
+      setInfo('Please use a CSV file. Save Excel as "CSV UTF-8".', 'err');
+      parsedQuestions = []; skippedRows = []; genBtn.disabled = true;
+      return;
+    }
+    var rd = new FileReader();
+    rd.onload = function(ev){
+      try{
+        var text = ev.target.result;
+        if(text.indexOf('\uFFFD') !== -1){
+          throw new Error('Encoding problem: file is not valid UTF-8. Save as "CSV UTF-8".');
+        }
+        var rows = parseCSV(text);
+        var parsed = parseRows(rows);
+        parsedQuestions = parsed.questions;
+        skippedRows = parsed.skipped;
+        var msg = 'Loaded ' + parsedQuestions.length + ' questions.';
+        if(skippedRows.length) msg += ' Skipped rows (invalid "correct" or empty options): ' + skippedRows.join(', ');
+        setInfo(msg, skippedRows.length ? 'warn' : 'ok');
+        document.getElementById('qCount').max = parsedQuestions.length;
+        var v = parseInt(document.getElementById('qCount').value, 10) || 0;
+        if(v > parsedQuestions.length) document.getElementById('qCount').value = parsedQuestions.length;
+        genBtn.disabled = false;
+      } catch(err){
+        parsedQuestions = []; skippedRows = [];
+        genBtn.disabled = true;
+        setInfo('Error: ' + err.message, 'err');
+      }
+    };
+    rd.readAsText(f, 'UTF-8');
+  });
+
+  document.getElementById('dlSample').onclick = function(){
+    var sample = [
+      'text,optionA,optionB,optionC,optionD,correct,explanation',
+      'What does CMS stand for?,Content Management System,Central Media Server,Client Module Service,Code Management Script,0,CMS = Content Management System.',
+      'Which port does HTTP use by default?,21,22,80,443,2,HTTP uses port 80 by default.',
+      'Which language runs natively in the browser?,PHP,Python,JavaScript,Java,2,JavaScript runs natively in browsers.',
+      'What does SQL stand for?,Structured Query Language,Simple Question List,System Query Logic,Sequential Query Language,0,SQL = Structured Query Language.'
+    ].join('\n');
+    var blob = new Blob(['\ufeff' + sample], {type:'text/csv;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'questions_sample.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  };
+
+  function toB64(str){
+    var bytes = new TextEncoder().encode(str);
+    var bin = '';
+    for(var i = 0; i < bytes.length; i += 0x8000){
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return btoa(bin);
+  }
+
+  var SAFE_RE;
+  try{ SAFE_RE = new RegExp('[^\\p{L}\\p{N}]+', 'gu'); }
+  catch(e){ SAFE_RE = /[^A-Za-z0-9]+/g; }
+  function safeFilename(title){
+    var safe = String(title || '').replace(SAFE_RE, '_').replace(/^_+|_+$/g, '');
+    if(!safe) safe = 'exam';
+    return safe;
+  }
+
+  genBtn.addEventListener('click', function(){
+    if(!parsedQuestions.length){ alert('Please load a question bank first.'); return; }
+    var title = document.getElementById('examTitle').value.trim() || 'Practice Exam';
+    var count = parseInt(document.getElementById('qCount').value, 10);
+    var dur = parseInt(document.getElementById('duration').value, 10);
+    var passMarkRaw = document.getElementById('passMark').value.trim();
+    var passMark = parseInt(passMarkRaw, 10);
+    var lang = langSelect.value || 'en';
+    if(!count || count < 1){ alert('Enter a valid number of questions.'); return; }
+    if(count > parsedQuestions.length) count = parsedQuestions.length;
+    if(!dur || dur < 1 || dur > 600){ alert('Enter a valid duration (1–600 minutes).'); return; }
+    if(passMarkRaw === '' || isNaN(passMark) || passMark < 0 || passMark > 100){
+      alert('Pass mark must be a number between 0 and 100.'); return;
+    }
+
+    var link = document.getElementById('groupLink').value.trim();
+    if(link && !/^https?:\/\/\S+$/i.test(link)){ alert('The class link must start with http:// or https://'); return; }
+    var cfg = { title: title, count: count, duration: dur, passMark: passMark, lang: lang, questions: parsedQuestions,
+      shuffle: document.getElementById('shuffleOpts').checked,
+      review: document.getElementById('showReview').checked,
+      saveResultCopy: document.getElementById('saveResultCopy').checked,
+      share: { net: document.getElementById('netSel').value, link: link } };
+    var b64 = toB64(JSON.stringify(cfg));
+    var examCss = document.getElementById('examCss').textContent;
+    var examJs = document.getElementById('examJs').textContent;
+    var isRTL = (lang === 'fa' || lang === 'ar');
+
+    var html = '<!DOCTYPE html>\n' +
+      '<html lang="' + lang + '" dir="' + (isRTL ? 'rtl' : 'ltr') + '">\n' +
+      '<head>\n' +
+      '<meta charset="utf-8">\n' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">\n' +
+      '<title>' + escapeHtml(title) + '</title>\n' +
+      '<style>' + examCss + '</style>\n' +
+      '</head>\n<body>\n' +
+      '<div id="app"></div>\n' +
+      '<script id="cfg" type="application/json">' + b64 + '<\/script>\n' +
+      '<script>' + examJs + '<\/script>\n' +
+      '</body>\n</html>';
+
+    var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    lastBlob = blob; lastTitle = title; lastNet = cfg.share.net; lastLink = link;
+    lastName = 'exam_' + safeFilename(title) + '_' + Date.now() + '.html';
+    var msg = 'Exam file ready: ' + lastName;
+    if(document.getElementById('saveExamCopy').checked){ saveBlob(blob, lastName); msg += ' (copy saved to Downloads)'; }
+    document.getElementById('outInfo').textContent = msg;
+    document.getElementById('outCard').className = 'card';
+    document.getElementById('outCard').scrollIntoView({behavior:'smooth', block:'nearest'});
+  });
+
+  var lastBlob = null, lastName = '', lastTitle = '', lastNet = 'system', lastLink = '';
+  var NETS = {
+    telegram:function(m){ return 'https://t.me/share/url?url=%20&text=' + encodeURIComponent(m); },
+    whatsapp:function(m){ return 'https://wa.me/?text=' + encodeURIComponent(m); },
+    bale:function(){ return 'https://ble.ir/'; },
+    rubika:function(){ return 'https://rubika.ir/'; },
+    eitaa:function(){ return 'https://eitaa.com/'; }
+  };
+  function saveBlob(blob, name){
+    var u = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = u; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(u); }, 10000);
+  }
+  document.getElementById('redl').onclick = function(){ if(lastBlob) saveBlob(lastBlob, lastName); };
+  document.getElementById('shareExam').onclick = function(){
+    if(!lastBlob) return;
+    var text = lastTitle + ' - open the attached HTML file in your browser.';
+    var info = document.getElementById('outInfo');
+    try{
+      var file = new File([lastBlob], lastName, {type:'text/html'});
+      if(navigator.canShare && navigator.canShare({ files:[file] })){
+        navigator.share({ files:[file], title: lastTitle, text: text }).catch(function(err){
+          if(!err || err.name !== 'AbortError') fallback();
+        });
+        return;
+      }
+    }catch(e){}
+    fallback();
+    function fallback(){
+      saveBlob(lastBlob, lastName);
+      try{ navigator.clipboard.writeText(text).catch(function(){}); }catch(e){}
+      var u = lastLink || (NETS[lastNet] ? NETS[lastNet](text) : '');
+      if(u) window.open(u, '_blank', 'noopener');
+      info.textContent = 'File downloaded. Attach it in the chat that opened (this browser cannot attach files automatically).';
+    }
+  };
+})();
+</script>
+</body>
+</html>
