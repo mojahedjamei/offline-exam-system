@@ -1,0 +1,11 @@
+﻿text,optionA,optionB,optionC,optionD,correct,explanation
+What does HTML stand for?,HyperText Markup Language,High Tech Modern Language,Home Tool Markup Language,Hyperlink Text Mode Language,0,HTML = HyperText Markup Language.
+Which port does HTTPS use by default?,21,80,443,3306,2,HTTPS uses port 443 by default.
+Which language runs natively in web browsers?,Python,JavaScript,PHP,Ruby,1,Browsers execute JavaScript natively.
+What does CSS control?,Database queries,Server routing,Page presentation and layout,Email delivery,2,CSS styles how HTML is displayed.
+What does SQL stand for?,Structured Query Language,Simple Question List,System Query Logic,Sequential Query Language,0,SQL = Structured Query Language.
+"Which of these is a relational database, and why?","MySQL - it stores data in tables","Photoshop - it edits images","Chrome - it browses pages","Notepad - it edits text",0,MySQL stores data in related tables.
+Which HTTP status code means "Not Found"?,200,301,404,500,2,404 means the resource was not found.
+What does URL stand for?,Uniform Resource Locator,Universal Reference Link,Unified Remote Location,User Routing Label,0,URL = Uniform Resource Locator.
+Which tag creates a hyperlink in HTML?,<link>,<a>,<href>,<url>,1,The <a> (anchor) tag creates links.
+Which symbol starts a CSS id selector?,.,#,@,&,1,#name selects the element with that id.
