@@ -57,7 +57,7 @@ If you paste names into a spreadsheet, prefix any value starting with `=`, `+`, 
 
 ## Hosting the builder (GitHub Pages)
 
-Settings → Pages → Deploy from a branch → `main` / `/ (root)` → Save. The builder will be at `https://YOUR-USERNAME.github.io/offline-exam-system/`. You can also just download `admin.html` and double-click it; no hosting is required.
+Settings → Pages → Deploy from a branch → `main` / `/ (root)` → Save. The builder will be at `[https://mojahedjamei.github.io/offline-exam-system/admin.html/]`. You can also just download `admin.html` and double-click it; no hosting is required.
 
 ## Sharing
 
